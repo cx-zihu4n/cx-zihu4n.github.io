@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang=en>
+<head>
+    <!-- so meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+    <meta name="description" content="Linux Kernel Source Code ReadingBootsec.s加载setup.s，重载自身到0x9000并跳转执行 Setup.s 实模式与保护模式的寻址方式不同  实模式：段值放在段寄存器中，偏移放在可用于寻址的寄存器中 保护模式：段寄存器中存放的是段描述符表中某项的索引值 进32位保护模式代码 12mov ax,#0x0001lmsw ax  Head.s.s中_开头的可在">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux Kernel Learning">
+<meta property="og:url" content="http://example.com/2023/10/03/Linux%20Kernel%20Learning/index.html">
+<meta property="og:site_name" content="cx">
+<meta property="og:description" content="Linux Kernel Source Code ReadingBootsec.s加载setup.s，重载自身到0x9000并跳转执行 Setup.s 实模式与保护模式的寻址方式不同  实模式：段值放在段寄存器中，偏移放在可用于寻址的寄存器中 保护模式：段寄存器中存放的是段描述符表中某项的索引值 进32位保护模式代码 12mov ax,#0x0001lmsw ax  Head.s.s中_开头的可在">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="http://example.com/picture/linux_kernel/1.png">
+<meta property="article:published_time" content="2023-10-03T02:06:04.500Z">
+<meta property="article:modified_time" content="2023-10-03T02:06:04.500Z">
+<meta property="article:author" content="cx">
+<meta property="article:tag" content="Reading&amp;&amp;Learning">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/picture/linux_kernel/1.png">
+    
+    
+      
+        
+          <link rel="shortcut icon" href="/images/favicon.ico">
+        
+      
+      
+        
+          <link rel="icon" type="image/png" href="/images/favicon-192x192.png" sizes="192x192">
+        
+      
+      
+        
+          <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+        
+      
+    
+    <!-- title -->
+    <title>Linux Kernel Learning</title>
+    <!-- async scripts -->
+    <!-- Google Analytics -->
+
+
+    <!-- Umami Analytics -->
+
+
+    <!-- styles -->
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <!-- persian styles -->
+    
+    <!-- rss -->
+    
+    
+	<!-- mathjax -->
+	
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body class="max-width mx-auto px3 ltr">
+    
+      <div id="header-post">
+  <a id="menu-icon" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="menu-icon-tablet" href="#" aria-label="Menu"><i class="fa-solid fa-bars fa-lg"></i></a>
+  <a id="top-icon-tablet" href="#" aria-label="Top" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');" style="display:none;"><i class="fa-solid fa-chevron-up fa-lg"></i></a>
+  <span id="menu">
+    <span id="nav">
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">Projects</a></li><!--
+     -->
+      </ul>
+    </span>
+    <br/>
+    <span id="actions">
+      <ul>
+        
+        
+        <li><a class="icon" aria-label="Next post" href="/2023/10/03/OS%20Q&A/"><i class="fa-solid fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+        
+        <li><a class="icon" aria-label="Back to top" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();" onmouseout="$('#i-top').toggle();"></i></a></li>
+        <li><a class="icon" aria-label="Share post" href="#"><i class="fa-solid fa-share-alt" aria-hidden="true" onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();" onclick="$('#share').toggle();return false;"></i></a></li>
+      </ul>
+      <span id="i-prev" class="info" style="display:none;">Previous post</span>
+      <span id="i-next" class="info" style="display:none;">Next post</span>
+      <span id="i-top" class="info" style="display:none;">Back to top</span>
+      <span id="i-share" class="info" style="display:none;">Share post</span>
+    </span>
+    <br/>
+    <div id="share" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/10/03/Linux%20Kernel%20Learning/"><i class="fab fa-facebook " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&text=Linux Kernel Learning"><i class="fab fa-twitter " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&is_video=false&description=Linux Kernel Learning"><i class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Linux Kernel Learning&body=Check out this article: http://example.com/2023/10/03/Linux%20Kernel%20Learning/"><i class="fa-solid fa-envelope " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&name=Linux Kernel Learning&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&t=Linux Kernel Learning"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+    
+    
+      <div id="toc">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Linux-Kernel-Source-Code-Reading"><span class="toc-number">1.</span> <span class="toc-text">Linux Kernel Source Code Reading</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Bootsec-s"><span class="toc-number">1.1.</span> <span class="toc-text">Bootsec.s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Setup-s"><span class="toc-number">1.2.</span> <span class="toc-text">Setup.s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Head-s"><span class="toc-number">1.3.</span> <span class="toc-text">Head.s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#main-c"><span class="toc-number">1.4.</span> <span class="toc-text">main.c</span></a></li></ol></li></ol>
+      </div>
+    
+  </span>
+</div>
+
+    
+    <div class="content index py4 ">
+        
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+  <header>
+    
+    <h1 class="posttitle p-name" itemprop="name headline">
+        Linux Kernel Learning
+    </h1>
+
+
+
+    <div class="meta">
+      <span class="author p-author h-card" itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span class="p-name" itemprop="name">cx</span>
+      </span>
+      
+    <div class="postdate">
+      
+        <time datetime="2023-10-03T02:06:04.500Z" class="dt-published" itemprop="datePublished">2023-10-03</time>
+        
+      
+    </div>
+
+
+      
+
+      
+    <div class="article-tag">
+        <i class="fa-solid fa-tag"></i>
+        <a class="p-category" href="/tags/Reading-Learning/" rel="tag">Reading&&Learning</a>
+    </div>
+
+
+    </div>
+  </header>
+  
+
+  <div class="content e-content" itemprop="articleBody">
+    <h1 id="Linux-Kernel-Source-Code-Reading"><a href="#Linux-Kernel-Source-Code-Reading" class="headerlink" title="Linux Kernel Source Code Reading"></a>Linux Kernel Source Code Reading</h1><h2 id="Bootsec-s"><a href="#Bootsec-s" class="headerlink" title="Bootsec.s"></a>Bootsec.s</h2><p>加载setup.s，重载自身到0x9000并跳转执行</p>
+<h2 id="Setup-s"><a href="#Setup-s" class="headerlink" title="Setup.s"></a>Setup.s</h2><ul>
+<li><strong>实模式与保护模式的寻址方式不同</strong></li>
+</ul>
+<p>实模式：段值放在段寄存器中，偏移放在可用于寻址的寄存器中</p>
+<p>保护模式：段寄存器中存放的是段描述符表中某项的索引值</p>
+<p><strong>进32位保护模式代码</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mov ax,#0x0001</span><br><span class="line">lmsw ax</span><br></pre></td></tr></table></figure>
+
+<h2 id="Head-s"><a href="#Head-s" class="headerlink" title="Head.s"></a>Head.s</h2><p><strong>.s中_开头的可在c代码内找到对应的</strong></p>
+<h2 id="main-c"><a href="#main-c" class="headerlink" title="main.c"></a>main.c</h2><p><img src="/picture/linux_kernel/1.png" alt="内核执行流程图"></p>
+
+  </div>
+</article>
+
+
+
+        
+          <div id="footer-post-container">
+  <div id="footer-post">
+
+    <div id="nav-footer" style="display: none">
+      <ul>
+        
+          <li><a href="/">Home</a></li>
+        
+          <li><a href="/about/">About</a></li>
+        
+          <li><a href="/archives/">Writing</a></li>
+        
+          <li><a target="_blank" rel="noopener" href="http://github.com/probberechts">Projects</a></li>
+        
+      </ul>
+    </div>
+
+    
+    
+      <div id="toc-footer" style="display: none">
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Linux-Kernel-Source-Code-Reading"><span class="toc-number">1.</span> <span class="toc-text">Linux Kernel Source Code Reading</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Bootsec-s"><span class="toc-number">1.1.</span> <span class="toc-text">Bootsec.s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Setup-s"><span class="toc-number">1.2.</span> <span class="toc-text">Setup.s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Head-s"><span class="toc-number">1.3.</span> <span class="toc-text">Head.s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#main-c"><span class="toc-number">1.4.</span> <span class="toc-text">main.c</span></a></li></ol></li></ol>
+      </div>
+    
+
+    <div id="share-footer" style="display: none">
+      <ul>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.facebook.com/sharer.php?u=http://example.com/2023/10/03/Linux%20Kernel%20Learning/"><i class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://twitter.com/share?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&text=Linux Kernel Learning"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.linkedin.com/shareArticle?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://pinterest.com/pin/create/bookmarklet/?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&is_video=false&description=Linux Kernel Learning"><i class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" href="mailto:?subject=Linux Kernel Learning&body=Check out this article: http://example.com/2023/10/03/Linux%20Kernel%20Learning/"><i class="fa-solid fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://getpocket.com/save?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&name=Linux Kernel Learning&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&t=Linux Kernel Learning"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
+</ul>
+
+    </div>
+
+    <div id="actions-footer">
+        <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+        
+          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+        
+        <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+        <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
+    </div>
+
+  </div>
+</div>
+
+        
+        <footer id="footer">
+  <div class="footer-left">
+    Copyright &copy;
+    
+    
+    2016-2023
+    cx
+  </div>
+  <div class="footer-right">
+    <nav>
+      <ul>
+        <!--
+       --><li><a href="/">Home</a></li><!--
+     --><!--
+       --><li><a href="/about/">About</a></li><!--
+     --><!--
+       --><li><a href="/archives/">Writing</a></li><!--
+     --><!--
+       --><li><a target="_blank" rel="noopener" href="http://github.com/probberechts">Projects</a></li><!--
+     -->
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+    </div>
+    <!-- styles -->
+
+
+
+  <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'"/>
+
+
+    <!-- jquery -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<!-- clipboard -->
+
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.7/clipboard.min.js" crossorigin="anonymous"></script>
+  
+  <script type="text/javascript">
+  $(function() {
+    // copy-btn HTML
+    var btn = "<span class=\"btn-copy tooltipped tooltipped-sw\" aria-label=\"Copy to clipboard!\">";
+    btn += '<i class="fa-regular fa-clone"></i>';
+    btn += '</span>';
+    // mount it!
+    $(".highlight table").before(btn);
+    var clip = new ClipboardJS('.btn-copy', {
+      text: function(trigger) {
+        return Array.from(trigger.nextElementSibling.querySelectorAll('.code')).reduce((str,it)=>str+it.innerText+'\n','')
+      }
+    });
+    clip.on('success', function(e) {
+      e.trigger.setAttribute('aria-label', "Copied!");
+      e.clearSelection();
+    })
+  })
+  </script>
+
+
+<script src="/js/main.js"></script>
+
+<!-- search -->
+
+<!-- Baidu Analytics -->
+
+<!-- Cloudflare Analytics -->
+
+<!-- Disqus Comments -->
+
+<!-- utterances Comments -->
+
+</body>
+</html>
