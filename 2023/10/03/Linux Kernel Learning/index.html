@@ -6,20 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-    <meta name="description" content="Linux Kernel Source Code ReadingBootsec.s加载setup.s，重载自身到0x9000并跳转执行 Setup.s 实模式与保护模式的寻址方式不同  实模式：段值放在段寄存器中，偏移放在可用于寻址的寄存器中 保护模式：段寄存器中存放的是段描述符表中某项的索引值 进32位保护模式代码 12mov ax,#0x0001lmsw ax  Head.s.s中_开头的可在">
+    <meta name="description" content="something just for me hh">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Linux Kernel Learning">
 <meta property="og:url" content="http://example.com/2023/10/03/Linux%20Kernel%20Learning/index.html">
 <meta property="og:site_name" content="cx">
-<meta property="og:description" content="Linux Kernel Source Code ReadingBootsec.s加载setup.s，重载自身到0x9000并跳转执行 Setup.s 实模式与保护模式的寻址方式不同  实模式：段值放在段寄存器中，偏移放在可用于寻址的寄存器中 保护模式：段寄存器中存放的是段描述符表中某项的索引值 进32位保护模式代码 12mov ax,#0x0001lmsw ax  Head.s.s中_开头的可在">
+<meta property="og:description" content="something just for me hh">
 <meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://example.com/picture/linux_kernel/1.png">
 <meta property="article:published_time" content="2023-10-03T02:06:04.500Z">
 <meta property="article:modified_time" content="2023-10-03T02:06:04.500Z">
 <meta property="article:author" content="cx">
 <meta property="article:tag" content="Reading&amp;&amp;Learning">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://example.com/picture/linux_kernel/1.png">
     
     
       
@@ -107,16 +105,12 @@
   <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-reddit " aria-hidden="true"></i></a></li>
   <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
   <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-digg " aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&name=Linux Kernel Learning&description="><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&name=Linux Kernel Learning&description=something just for me hh"><i class="fab fa-tumblr " aria-hidden="true"></i></a></li>
   <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&t=Linux Kernel Learning"><i class="fab fa-hacker-news " aria-hidden="true"></i></a></li>
 </ul>
 
     </div>
     
-    
-      <div id="toc">
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Linux-Kernel-Source-Code-Reading"><span class="toc-number">1.</span> <span class="toc-text">Linux Kernel Source Code Reading</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Bootsec-s"><span class="toc-number">1.1.</span> <span class="toc-text">Bootsec.s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Setup-s"><span class="toc-number">1.2.</span> <span class="toc-text">Setup.s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Head-s"><span class="toc-number">1.3.</span> <span class="toc-text">Head.s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#main-c"><span class="toc-number">1.4.</span> <span class="toc-text">main.c</span></a></li></ol></li></ol>
-      </div>
     
   </span>
 </div>
@@ -160,18 +154,18 @@
   
 
   <div class="content e-content" itemprop="articleBody">
-    <h1 id="Linux-Kernel-Source-Code-Reading"><a href="#Linux-Kernel-Source-Code-Reading" class="headerlink" title="Linux Kernel Source Code Reading"></a>Linux Kernel Source Code Reading</h1><h2 id="Bootsec-s"><a href="#Bootsec-s" class="headerlink" title="Bootsec.s"></a>Bootsec.s</h2><p>加载setup.s，重载自身到0x9000并跳转执行</p>
-<h2 id="Setup-s"><a href="#Setup-s" class="headerlink" title="Setup.s"></a>Setup.s</h2><ul>
-<li><strong>实模式与保护模式的寻址方式不同</strong></li>
-</ul>
-<p>实模式：段值放在段寄存器中，偏移放在可用于寻址的寄存器中</p>
-<p>保护模式：段寄存器中存放的是段描述符表中某项的索引值</p>
-<p><strong>进32位保护模式代码</strong></p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">mov ax,#0x0001</span><br><span class="line">lmsw ax</span><br></pre></td></tr></table></figure>
-
-<h2 id="Head-s"><a href="#Head-s" class="headerlink" title="Head.s"></a>Head.s</h2><p><strong>.s中_开头的可在c代码内找到对应的</strong></p>
-<h2 id="main-c"><a href="#main-c" class="headerlink" title="main.c"></a>main.c</h2><p><img src="/picture/linux_kernel/1.png" alt="内核执行流程图"></p>
-
+    <div class="hbe hbe-container" id="hexo-blog-encrypt" data-wpm="wrong password,check it" data-whm="wrong hash,check it">
+  <script id="hbeData" type="hbeData" data-hmacdigest="9e174ed9ec45a3e67400575dd0ca0a64662b7024c70548ac661a7248778cbe17">9df7d68807d9c74570b205ce3ec1bfcf97813ab19b9a13f3d884d927abd8d3dcc46050dd5c86662b25dcd9e5e0540ca268115fb26ea80e4bed44fb74e0ef26ca394b64c10afed5d52d91adc20ea1ef94b88614849c6b90055f1ac973ee95a3cc69322f3e48e7a8cd09b970a0adf4ab6a21a9191bf22c0dd10a8e9e73b61fb7f2705622464927fe221a3db7fc1ac109378ad81017710f44961c98334d52a1d692fd926a27678187ac851bbe305bbf7bbb340d33a34d7acaed6fa23eab736e1aa57830ecbabf0b8185f01b768a65253cafa97e8a56ca7b980b29b14ff7ed82fd1eb242a46680204e06b81bc3589435381237ae1a5d399e1cb0210da1e80d55650920ccb7c0b0f0085f8a131c58e35d69d38e3baa1ef0a772ec9aacbe2527042483a96edbd33a0cb4b72f10338174b08dfd5efdb68b6245380a39b7b12ddc2f754aa1d289aa51a17a96e34987e5550dd58ef0898df97c7c198059f801b9eacf101e0146215b8a0245e81d1013eee96b01db46612def33eb7df3700c6581b57aa7597cf7644128ee0124297115def80db6d9e366a154c12030869d7e850dd5b8a613b2b590df1f78a3d2d3fc95a298a443f1bf6f7d241d6247b0d2ec879c1d6018efcc1830020a5913a6e8cc30b768f40a1ef4222b539d9ac48236df08d0fb264aee33c74a41224818718ec729394a52dc137ad9e6f41f850dc2f820234f968a2ba78f336bfaf6afdb31e33135c4ab3c75f446181a70d8e6ac673fbbda75b057c0aa293a611a018f1af2308c61adbbc3fa9a8ef507f21a6f0c1c378e76c9f374f16d34812c07d28760691079fb600ad26de5719ad38beb105ec282790da4f08fa69a25c9f9929856a9b5546edc1d9be5a5c2bf94f9e586ffc06401ae634aed7459f3784fb980ea9491b66be1dc5471e991f316fcfba251fdcbefebdfd1ba3899b60c070840e572063fc51c4c7c10cd81e58433218baaf3d57e068e9041f7a4be94c9db571a8b1ef438371e81f30ca664b63bf61f51fc73ab2baed7954b3f230baa61dc2cbd0989204c556fe01f8b04e262cc0e456896c2c590b851d268680fbf93f9aabeb36c4829860b101f3f11ad6e32ab47c65c476106e0e717564806283de44c8ff6aeec45939f05d12ab420bf18a53603ee70285b3dca92bb9572f9b062df2433cac4dc4029393f9318583e876cb4af90e183dc4cb61c4d7231dfdd45de5d5f6f1e60a692f6402dd775ad3fb5bdeb91fdb35d408d3aa13d30f19a43ad44471c9c172929d5917d37ebf9ba9287c7771b4a38f21e13394ebdd4eee96eb50dc6fe23f76f93ec7405ce8779c167115434e1182133420b7093542758a3ebbc3b5e2ff1f6eb17752d4de1da6872bd5fc5768e4581ca3e9c4a059f68b35599dd11ed953f5c9779a6dbddfc7e10b0775c225bf7f13782d160bf53697c486cb4553dad44991dd90f679ed740b801337eb9ae7ae4de5ee4a1c4c8e3c7a8cee586b30b335b00b7377bd9062ec5ea41f0db9cd4cdd1919d595952fa9d5e914155bdc92d236e5ca57a2d43a268de2fe2a9d9192a8f1d0b6615918ac568954ef100e636c0d5fcf7319d04180fadffb563948323db852da94db8a8a2205d3a50e4afae7464a73b74b101a507a2483f2e2b17fea644d679ba98d3498322c0cb2c8b1ec0b3f013751795c7e612bf6f6eeb84fe9cbb24604db9272fe908db187f453076c5f65550b9c5930b7b1c5e3c01c776da9ba5f869e29407c6acad510fa35654ca988d956965a13c623609c484fb01265c19bff1a116afff48940beaa1714743c5a6bd57fb89e52ccff719c0194fc1e9ada025b75055c8f2e42ec6db5a78724629ca042c5cf85e45181f5198d3b44b4fb35d976104635ba4ee6a1e34aec99c1f4b4bcaf3291607e607983d1a42c962318ef468b5b739</script>
+  <div class="hbe hbe-content">
+    <div class="hbe hbe-input hbe-input-default">
+      <input class="hbe hbe-input-field hbe-input-field-default" type="password" id="hbePass">
+      <label class="hbe hbe-input-label hbe-input-label-default" for="hbePass">
+        <span class="hbe hbe-input-label-content hbe-input-label-content-default">well, plz input password</span>
+      </label>
+    </div>
+  </div>
+</div>
+<script data-pjax src="/lib/hbe.js"></script><link href="/css/hbe.style.css" rel="stylesheet" type="text/css">
   </div>
 </article>
 
@@ -197,10 +191,6 @@
 
     
     
-      <div id="toc-footer" style="display: none">
-        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Linux-Kernel-Source-Code-Reading"><span class="toc-number">1.</span> <span class="toc-text">Linux Kernel Source Code Reading</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Bootsec-s"><span class="toc-number">1.1.</span> <span class="toc-text">Bootsec.s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Setup-s"><span class="toc-number">1.2.</span> <span class="toc-text">Setup.s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Head-s"><span class="toc-number">1.3.</span> <span class="toc-text">Head.s</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#main-c"><span class="toc-number">1.4.</span> <span class="toc-text">main.c</span></a></li></ol></li></ol>
-      </div>
-    
 
     <div id="share-footer" style="display: none">
       <ul>
@@ -213,7 +203,7 @@
   <li><a class="icon" target="_blank" rel="noopener" href="http://reddit.com/submit?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
   <li><a class="icon" target="_blank" rel="noopener" href="http://www.stumbleupon.com/submit?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
   <li><a class="icon" target="_blank" rel="noopener" href="http://digg.com/submit?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&title=Linux Kernel Learning"><i class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
-  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&name=Linux Kernel Learning&description="><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+  <li><a class="icon" target="_blank" rel="noopener" href="http://www.tumblr.com/share/link?url=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&name=Linux Kernel Learning&description=something just for me hh"><i class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
   <li><a class="icon" target="_blank" rel="noopener" href="https://news.ycombinator.com/submitlink?u=http://example.com/2023/10/03/Linux%20Kernel%20Learning/&t=Linux Kernel Learning"><i class="fab fa-hacker-news fa-lg" aria-hidden="true"></i></a></li>
 </ul>
 
@@ -221,8 +211,6 @@
 
     <div id="actions-footer">
         <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
-        
-          <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i class="fa-solid fa-list fa-lg" aria-hidden="true"></i> TOC</a>
         
         <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i class="fa-solid fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
         <a id="top" style="display:none" class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fa-solid fa-chevron-up fa-lg" aria-hidden="true"></i> Top</a>
